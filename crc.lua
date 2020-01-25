@@ -23,9 +23,30 @@ function make_crc_table()
     end
 end
 
-function update_crc(crc, buf, len)
+local crc_meta = {}
 
-    local c = crc
+function crc_meta.New(self)
+
+    local CRC = {}
+
+    CRC.value = 0xffffffff
+
+    setmetatable(CRC, crc_meta)
+
+    return CRC
+end
+
+function crc_meta.__tostring(self)
+    return string.format("0x%X",self.value)
+end
+
+crc_meta.__call = crc_meta.New
+
+local crc_meta_index = {}
+
+function crc_meta_index.Update(self, buf, len)
+
+    local c = self.value
     local n
 
     if(CRCTable == nil) then
@@ -36,9 +57,19 @@ function update_crc(crc, buf, len)
         c = CRCTable[((c ~ buf[n+1]) & 0xFF) + 1] ~ (c >> 8)
     end
 
-    return c
+    self.value = c
 end
 
-function crc(buf, len)
-    return update_crc(0xffffffff,buf,len) ~ 0xffffffff
+function crc_meta_index.GetValue(self)
+    return self.value ~ 0xffffffff
 end
+
+function crc_meta_index.Reset(self)
+    self.value = 0xffffffff
+end
+
+crc_meta.__index = crc_meta_index
+
+CRC32 = {}
+
+setmetatable(CRC32,crc_meta)
