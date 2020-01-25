@@ -8,7 +8,7 @@ function color_meta.New(self, r, g, b, a)
 
     if(r == nil) then
         r = 0
-    elseif(type(r) != "number") then
+    elseif(type(r) ~= "number") then
         error("Invalid argument passed to Color.New(). Argument 1 must be a number.")
     elseif(r < 0 or r > 255) then
         error("Invalid argument passed to Color.New(). Argument 1 must be between 0 and 255 inclusive.")
@@ -18,7 +18,7 @@ function color_meta.New(self, r, g, b, a)
 
     if(g == nil) then
         g = 0
-    elseif(type(g) != "number") then
+    elseif(type(g) ~= "number") then
         error("Invalid argument passed to Color.New(). Argument 2 must be a number.")
     elseif(g < 0 or g > 255) then
         error("Invalid argument passed to Color.New(). Argument 2 must be between 0 and 255 inclusive.")
@@ -28,7 +28,7 @@ function color_meta.New(self, r, g, b, a)
 
     if(b == nil) then
         b = 0
-    elseif(type(b) != "number") then
+    elseif(type(b) ~= "number") then
         error("Invalid argument passed to Color.New(). Argument 3 must be a number.")
     elseif(b < 0 or b > 255) then
         error("Invalid argument passed to Color.New(). Argument 3 must be between 0 and 255 inclusive.")
@@ -38,7 +38,7 @@ function color_meta.New(self, r, g, b, a)
 
     if(a == nil) then
         a = 255
-    elseif(type(a) != "number") then
+    elseif(type(a) ~= "number") then
         error("Invalid argument passed to Color.New(). Argument 4 must be a number.")
     elseif(a < 0 or a > 255) then
         error("Invalid argument passed to Color.New(). Argument 4 must be between 0 and 255 inclusive.")
@@ -72,7 +72,7 @@ local color_meta_index = {}
 function color_meta_index.SetR(self,v)
     if(v == nil) then
         error("Invalid argument passed to Color:SetR(). Argument 1 cannot be nil.")
-    elseif(type(v) != "number") then
+    elseif(type(v) ~= "number") then
         error("Invalid argument passed to Color:SetR(). Argument 1 must be a number.")
     elseif(v < 0 or v > 255) then
         error("Invalid argument passed to Color:SetR(). Argument 1 must be between 0 and 255 inclusive.")
@@ -84,7 +84,7 @@ end
 function color_meta_index.SetG(self,v)
     if(v == nil) then
         error("Invalid argument passed to Color:SetG(). Argument 1 cannot be nil.")
-    elseif(type(v) != "number") then
+    elseif(type(v) ~= "number") then
         error("Invalid argument passed to Color:SetG(). Argument 1 must be a number.")
     elseif(v < 0 or v > 255) then
         error("Invalid argument passed to Color:SetG(). Argument 1 must be between 0 and 255 inclusive.")
@@ -96,7 +96,7 @@ end
 function color_meta_index.SetB(self,v)
     if(v == nil) then
         error("Invalid argument passed to Color:SetB(). Argument 1 cannot be nil.")
-    elseif(type(v) != "number") then
+    elseif(type(v) ~= "number") then
         error("Invalid argument passed to Color:SetB(). Argument 1 must be a number.")
     elseif(v < 0 or v > 255) then
         error("Invalid argument passed to Color:SetB(). Argument 1 must be between 0 and 255 inclusive.")
@@ -108,7 +108,7 @@ end
 function color_meta_index.SetA(self,v)
     if(v == nil) then
         error("Invalid argument passed to Color:SetA(). Argument 1 cannot be nil.")
-    elseif(type(v) != "number") then
+    elseif(type(v) ~= "number") then
         error("Invalid argument passed to Color:SetA(). Argument 1 must be a number.")
     elseif(v < 0 or v > 255) then
         error("Invalid argument passed to Color:SetA(). Argument 1 must be between 0 and 255 inclusive.")
