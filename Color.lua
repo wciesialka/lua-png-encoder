@@ -6,57 +6,70 @@ end
 
 function color_meta.New(self, r, g, b, a)
 
-    if(r == nil) then
-        r = 0
-    elseif(type(r) ~= "number") then
-        error("Invalid argument passed to Color.New(). Argument 1 must be a number.")
-    elseif(r < 0 or r > 255) then
-        error("Invalid argument passed to Color.New(). Argument 1 must be between 0 and 255 inclusive.")
-    else
-        r = round(r)
+    if(getmetatable(r) == color_meta) then -- copy constructor
+        local color = {} -- create a new color
+
+        color.r = r.r
+        color.g = r.g
+        color.b = r.b
+        color.a = r.a
+
+        setmetatable(color, color_meta)
+
+        return color
+    else -- regular constructor
+        if(r == nil) then
+            r = 0
+        elseif(type(r) ~= "number") then
+            error("Invalid argument passed to Color.New(). Argument 1 must be a number.")
+        elseif(r < 0 or r > 255) then
+            error("Invalid argument passed to Color.New(). Argument 1 must be between 0 and 255 inclusive.")
+        else
+            r = round(r)
+        end
+
+        if(g == nil) then
+            g = 0
+        elseif(type(g) ~= "number") then
+            error("Invalid argument passed to Color.New(). Argument 2 must be a number.")
+        elseif(g < 0 or g > 255) then
+            error("Invalid argument passed to Color.New(). Argument 2 must be between 0 and 255 inclusive.")
+        else
+            g = round(g)
+        end
+
+        if(b == nil) then
+            b = 0
+        elseif(type(b) ~= "number") then
+            error("Invalid argument passed to Color.New(). Argument 3 must be a number.")
+        elseif(b < 0 or b > 255) then
+            error("Invalid argument passed to Color.New(). Argument 3 must be between 0 and 255 inclusive.")
+        else
+            b = round(b)
+        end
+
+        if(a == nil) then
+            a = 255
+        elseif(type(a) ~= "number") then
+            error("Invalid argument passed to Color.New(). Argument 4 must be a number.")
+        elseif(a < 0 or a > 255) then
+            error("Invalid argument passed to Color.New(). Argument 4 must be between 0 and 255 inclusive.")
+        else
+            a = round(a)
+        end
+
+
+        local color = {} -- create a new color
+
+        color.r = r
+        color.g = g
+        color.b = b
+        color.a = a
+
+        setmetatable(color, color_meta)
+
+        return color
     end
-
-    if(g == nil) then
-        g = 0
-    elseif(type(g) ~= "number") then
-        error("Invalid argument passed to Color.New(). Argument 2 must be a number.")
-    elseif(g < 0 or g > 255) then
-        error("Invalid argument passed to Color.New(). Argument 2 must be between 0 and 255 inclusive.")
-    else
-        g = round(g)
-    end
-
-    if(b == nil) then
-        b = 0
-    elseif(type(b) ~= "number") then
-        error("Invalid argument passed to Color.New(). Argument 3 must be a number.")
-    elseif(b < 0 or b > 255) then
-        error("Invalid argument passed to Color.New(). Argument 3 must be between 0 and 255 inclusive.")
-    else
-        b = round(b)
-    end
-
-    if(a == nil) then
-        a = 255
-    elseif(type(a) ~= "number") then
-        error("Invalid argument passed to Color.New(). Argument 4 must be a number.")
-    elseif(a < 0 or a > 255) then
-        error("Invalid argument passed to Color.New(). Argument 4 must be between 0 and 255 inclusive.")
-    else
-        a = round(a)
-    end
-
-
-    local color = {} -- create a new color
-
-    color.r = r
-    color.g = g
-    color.b = b
-    color.a = a
-
-    setmetatable(color, color_meta)
-
-    return color
 end
 
 color_meta.__call = color_meta.New
@@ -135,6 +148,10 @@ end
 
 function color_meta_index.Integer(self)
     return (self.r << 24) | (self.g << 16) | (self.b << 8) | (self.a)
+end
+
+function color_meta_index.Copy(self)
+    return Color(self.r,self.g,self.b,self.a)
 end
 
 color_meta.__index = color_meta_index
