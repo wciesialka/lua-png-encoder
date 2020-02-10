@@ -257,3 +257,55 @@ function zip_deflate_end()
     zip_base_dist = nil
     zip_flag_buf = nil
 end
+
+function zip_reuse_queue(p)
+    p.next = zip_free_queue
+    zip_free_queue = p 
+end
+
+function zip_new_queue()
+    local p
+
+    if(not zip_free_queue == nil) then
+        p = zip_free_queue
+        zip_free_queue = zip_free_queue.next
+    else
+        p = zip_DeflateBuffer()
+    end
+
+    p.next = nil
+    p.len = 0
+    p.off = 0
+
+    return p
+end
+
+function zip_head1(i)
+    return zip_prev[zip_WSIZE + i]
+end
+
+function zip_head2(i, val)
+    zip_prev[zip_WSIZE + i] = val
+    return zip_prev[zip_WSIZE + i]
+end
+
+function zip_put_byte(c)
+    zip_outcnt = zip_outcnt + 1
+    zip_outbuf[zip_outoff + zip_outcnt] = c
+    if(zip_outoff + zip_outcnt == zip_OUTBUFSIZ) then
+        zip_qoutbuf()
+    end
+end
+
+function zip_put_short(w)
+    w = w & 0xFFFF
+    if(zip_outoff + zip_outcnt < zip_OUTBUFSIZ - 2) then
+        zip_outcnt = zip_outcnt + 1
+        zip_outbuf[zip_outoff + zip_outcnt] = (w & 0xFF)
+        zip_outcnt = zip_outcnt + 1
+        zip_outbuf[zip_outoff + zip_outcnt++] = (w >> 8)
+    else
+        zip_put_byte(w & 0xff)
+        zip_put_byte(w >> 8)
+    end
+end
