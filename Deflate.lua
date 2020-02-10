@@ -309,3 +309,13 @@ function zip_put_short(w)
         zip_put_byte(w >> 8)
     end
 end
+
+-- Insert string s in the dictionary and set match_head to the previous head
+-- of the hash chain (the most recent string with same hash key). Return
+-- the previous length of the hash chain.
+function zip_INSERT_STRING()
+    zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ^ (zip_window[zip_strstart + zip_MIN_MATCH - 1] & 0xff)) & zip_HASH_MASK
+    zip_hash_head = zip_head1(zip_ins_h)
+    zip_prev[zip_strstart & zip_WMASK] = zip_hash_head
+    zip_head2(zip_ins_h, zip_strstart)
+end
