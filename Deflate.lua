@@ -319,3 +319,7 @@ function zip_INSERT_STRING()
     zip_prev[zip_strstart & zip_WMASK] = zip_hash_head
     zip_head2(zip_ins_h, zip_strstart)
 end
+
+function zip_SEND_CODE(c, tree)
+    zip_send_bits(tree[c].fc, tree[c].dl)
+end
