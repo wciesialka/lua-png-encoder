@@ -331,3 +331,7 @@ function zip_D_CODE(dist)
         return zip_dist_code[256+(dist >> 7)] & 0xFF
     end
 end
+
+function zip_SMALLER(tree, n, m)
+    return (tree[n].fc < tree[m].fc) || (tree[n].fc == tree[m].fc && zip_depth[n] <= zip_depth[m])
+end
