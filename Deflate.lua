@@ -323,3 +323,11 @@ end
 function zip_SEND_CODE(c, tree)
     zip_send_bits(tree[c].fc, tree[c].dl)
 end
+
+function zip_D_CODE(dist)
+    if(dist < 256) then
+        return zip_dist_code[dist] & 0xFF
+    else
+        return zip_dist_code[256+(dist >> 7)] & 0xFF
+    end
+end
