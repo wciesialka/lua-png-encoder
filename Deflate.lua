@@ -335,3 +335,14 @@ end
 function zip_SMALLER(tree, n, m)
     return (tree[n].fc < tree[m].fc) || (tree[n].fc == tree[m].fc && zip_depth[n] <= zip_depth[m])
 end
+
+function zip_read_buff(buff, offset, n)
+    local i = 0
+    while(i < n && zip_deflate_pos < #zip_deflate_data) do
+        zip_deflate_pos = zip_deflate_pos + 1
+        buff[offset + i] = utf8.codepoint(zip_deflate_data,zip_deflate_pos,zip_deflate_pos) & 0xFF
+        i = i+1
+    end
+
+    return i
+end
