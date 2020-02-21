@@ -383,3 +383,80 @@ function zip_lm_init()
         zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ~ (zip_window[j] & 0xFF))
     end
 end
+
+function zip_longest_match(cur_match)
+    local chain_length = zip_max_chain_length
+    local scanp = zip_strstart
+    local matchp
+    local len
+    local best_len = zip_prev_length
+
+    local zip_lm_init
+    if(zip_strstart > zip_MAX_DIST) then
+        limit = zip_strstart - zip_MAX_DIST
+    else
+        limit = zip_NIL
+    end
+
+    local strendp = zip_strstart + zip_MAX_MATCH
+    local scan_end1 = zip_window[scanp + best_len- 1]
+    local scan_end = zip_window[scanp + best_len]
+
+    local continue = false
+
+    if(zip_prev_length >= zip_good_match) then
+        chain_length = chain_length >> 2
+    end
+
+    repeat
+        matchp = cur_match
+
+        if(zip_window[matchp + best_len] ~= scan_end or zip_window[matchp + best_len - 1] ~= scan_end1 or zip_window[matchp] ~= zip_window[scanp] or zip_window[matchp + 1] ~= zip_window[scanp + 1]) then
+            continue = true
+        end
+
+        matchp = matchp + 1 -- done to combat where a ++matchp would be in the last expression
+
+        if(not continue) then
+
+            scanp = scanp + 2
+            matchp = matchp + 1
+
+            while(zip_window[scanp + 1] == zip_window[matchp + 1] and zip_window[scanp + 2] == zip_window[matchp + 2] and zip_window[scanp + 3] == zip_window[matchp + 3] and zip_window[scanp + 4] == zip_window[matchp + 4] and zip_window[scanp + 5] == zip_window[matchp + 5] and zip_window[scanp + 6] == zip_window[matchp + 6] and zip_window[scanp + 7] == zip_window[matchp + 7] and zip_window[scanp + 8] == zip_window[matchp + 8] and scanp < strendp) do
+                scanp = scanp + 8 
+                matchp = matchp + 8 -- done to combat all the ++matchp and ++scanp that would be in the conditional
+            end
+
+            scanp = scanp + 8 
+            matchp = matchp + 8
+
+            len = zip_MAX_MATCH - (strendp - scanp)
+            scanp = strendp - zip_MAX_MATCH
+
+            if(len > best_len) then
+                zip_match_start = cur_match
+                best_len = len
+                if(zip_FULL_SEARCH) then
+                    if(len >= zip_MAX_MATCH) then
+                        break
+                    end
+                else
+                    if(len >= zip_nice_match) then
+                        break
+                    end
+                end
+                scan_end1 = zip_window[scanp + best_len - 1]
+                scan_end = zip_window[scanp + best_len]
+            end
+
+        end
+
+        continue = false
+        cur_match = zip_prev[cur_match & zip_WMASK]
+        chain_length = chain_length - 1
+    until(not (cur_match > limit and chain_length ~= 0))
+
+    return best_len
+end
+
+
