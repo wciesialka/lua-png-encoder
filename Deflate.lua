@@ -1,18 +1,15 @@
--- big thanks to Dan Kogai for his JavaScript implementation of the Deflate algorithm,
--- which i used for reference.
-
 local function Array(n) -- function to create a table with a preset length, like a C-style array
     local t = {}
-    for i=1,n,1 do
-        table.insert(t,nil)
+    for i=0,n-1,1 do
+        t[i] = nil
     end
     return t
 end
 
 local function Array_Function(n,f,...)
     local t = {}
-    for i=1,n,1 do
-        table.insert(t,f(...))
+    for i=0,n-1,1 do
+        t[i]=f(...)
     end
     return t
 end
