@@ -502,3 +502,54 @@ function zip_fill_window()
         end
     end
 end
+
+function zip_deflate_fast()
+    while(zip_lookahead ~= 0 and zip_qhead ~= nil) do
+        local flush
+
+        zip_INSERT_STRING()
+
+        if(zip_hash_head ~= zip_NIL and zip_strstart - zip_hash_head <= zip_MAX_DIST) then
+            zip_match_length = zip_longest_match(zip_hash_head)
+
+            if(zip_match_length > zip_lookahead) then
+                zip_match_length = zip_lookahead
+            end
+        end
+
+        if(zip_match_length <= zip_MIN_MATCH) then
+            flush = zip_ct_tally(zip_strstart - zip_match_start, zip_match_length - zip_MIN_MATCH)
+
+            zip_lookahead = zip_lookahead - zip_match_length
+
+            if(zip_match_length <= zip_max_lazy_match) then
+                zip_match_length = zip_match_length-1
+
+                repeat
+                    zip_strstart = zip_strstart + 1
+                    zip_INSERT_STRING()
+
+                    zip_match_length = zip_match_length - 1
+                until(not (zip_match_length ~= 0))
+            else
+                zip_strstart = zip_strstart + zip_match_length
+                zip_match_length = 0
+                zip_ins_h = zip_window[zip_strstart] & 0xFF
+
+                zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ~ (zip_window[zip_strstart + 1] & oxFF)) & zip_HASH_MASK
+            end
+        else
+            flush = zip_ct_tally(0, zip_window[zip_strstart] & 0xFF)
+            zip_lookahead = zip_lookahead - 1
+            zip_strstart = zip_strstart + 1
+        end
+        if(flush) then
+            zip_flush_block(0)
+            zip_block_start = zip_strstart
+        end
+
+        while(zip_lookahead < zip_MIN_LOOKAHEAD and (not zip_eofile)) do
+            zip_fill_window()
+        end
+    end
+end
