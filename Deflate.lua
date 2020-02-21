@@ -459,4 +459,49 @@ function zip_longest_match(cur_match)
     return best_len
 end
 
+function zip_fill_window()
+    local n, m
 
+    local more = zip_window_size - zip_lookahead - zip_strstart
+
+    if(more == -1) then
+        more = more - 1
+    elseif(zip_strstart >= zip_WSIZE + zip_MAX_DIST) then
+        for n=0, zip_WSIZE-1, 1 do
+            zip_window[n] = zip_window[n + zip_WSIZE]
+        end
+
+        zip_match_start = zip_match_start - zip_WSIZE
+        zip_strstart = zip_strstart - zip_WSIZE
+        zip_block_start = zip_block_start - zip_WSIZE
+
+        for n=0, zip_HASH_SIZE-1, 1 do
+            m = zip_head1(n)
+            if(m >= zip_WSIZE) then
+                zip_head2(n,m-zip_WSIZE)
+            else
+                zip_head2(n,zip_NIL)
+            end
+        end
+
+        for n=0, zip_WSIZE - 1, 1 do
+            m = zip_prev[n]
+            if(m >= zip_WSIZE) then
+                zip_prev[n] = m - zip_WSIZE
+            else
+                zip_prev[n] = zip_NIL
+            end
+        end
+
+        more = more + zip_WSIZE
+    end
+
+    if(not zip_eofile) then
+        n = zip_read_buff(zip_window, zip_strstart + zip_lookahead, more)
+        if(n <= 0) then
+            zip_eofile = true
+        else
+            zip_lookahead = zip_lookahead + n
+        end
+    end
+end
