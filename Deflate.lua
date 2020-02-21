@@ -346,3 +346,40 @@ function zip_read_buff(buff, offset, n)
 
     return i
 end
+
+function zip_lm_init()
+    local j
+
+    for j=0,zip_HASH_SIZE-1,1 do
+        zip_prev[zip_WSIZE + j] = 0
+    end
+
+    zip_max_lazy_match = zip_configuration_table[zip_compr_level].max_lazy
+    zip_good_match = zip_configuration_table[zip_compr_level].good_length
+    if(not zip_FULL_SEARCH) then
+        zip_nice_match = zip_configuration_table[zip_compr_level].nice_length
+    end
+
+    zip_max_chain_length = zip_configuration_table[zip_compr_level].max_chain
+
+    zip_strstart = 0
+    zip_block_start = 0
+
+    zip_lookahead = zip_read_buff(zip_window, 0, 2 * zip_WSIZE)
+    if(zip_lookahead <= 0) then
+        zip_eofile = true
+        zip_lookahead = 0
+        return
+    end
+
+    zip_eofile = false
+
+    while(zip_lookahead < zip_MIN_LOOKAHEAD and (not zip_eofile)) then
+        zip_fill_window()
+    end
+
+    zip_ins_h = 0
+    for j=0,zip_MIN_MATCH - 2, 1 do
+        zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ~ (zip_window[j] & 0xFF))
+    end
+end
