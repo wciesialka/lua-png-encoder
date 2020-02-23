@@ -23,8 +23,15 @@ function png_meta.New(self)
     png.width  = nil
     png.height = nil
     png.buffer = {137,80,78,71,13,10,26,10} -- file signature
+    png.current_width = 0
+    png.current_height = 0
+    png.filter = 0
+    png.bit_depth = 8
+    png.color_type = 6
+    png.compression_method = 0
+    png.interlace_method = 0
 
-    png.image = nil
+    png.img = {}
 
     png.crc = CRC32()
 
@@ -39,21 +46,35 @@ png_index = {}
 
 png_meta.__index = png_index
 
--- Load_Image()
--- Expects a 2D array of Color metatables
+-- Add Pixel
+-- Expects a Color metatable
 
-function png_index.Load_Image(self,image)
-    self.height = #image
-    self.width =  #image[0]
+function png_index.Add_Pixel(self,pixel)
+    if(self.current_height == self.height) then
+        error("Cannot add any more pixels to PNG, width and height met.")
+    else
+        if(self.current_width == 0) then
+            table.insert(self.img,self.filter)
+        end
+        table.insert(self.img,pixel.r)
+        table.insert(self.img,pixel.g)
+        table.insert(self.img,pixel.b)
+        table.insert(self.img,pixel.a)
+        self.current_width = self.current_width + 1
+        if(self.current_width == self.width) then
+            self.current_height = self.current_height + 1
+            self.current_width = 0
+        end
+    end
+end
 
-    self.img = {}
+-- Add Image
+-- Expects a 2D array of color metatables
+
+function png_index.Add_Image(self,image)
     for _,row in pairs(image) do
-        table.insert(img,0)
-        for _,pix in pairs(row) do
-            table.insert(img,pix:GetR())
-            table.insert(img,pix:GetG())
-            table.insert(img,pix:GetB())
-            table.insert(img,pix:GetA())
+        for _,pixel in pairs(row) do
+            self:Add_Pixel(pixel)
         end
     end
 end
@@ -79,11 +100,11 @@ function png_index.Add_Header(self)
     local buf = {}
     Recursive_Push( buf, self:As_4_Bytes( self.width  ) ) -- width (4 bytes)
     Recursive_Push( buf, self:As_4_Bytes( self.height ) ) -- height (4 bytes)
-    Recursive_Push( buf, 8 ) -- bit depth (1 byte)
-    Recursive_Push( buf, 6 ) -- color type (1 byte)
-    Recursive_Push( buf, 0 ) -- compression method (1 byte)
-    Recursive_Push( buf, 0 ) -- filter type (1 byte)
-    Recursive_Push( buf, 0 ) -- interlace method (1 byte)
+    Recursive_Push( buf, self.bit_depth ) -- bit depth (1 byte)
+    Recursive_Push( buf, self.color_type ) -- color type (1 byte)
+    Recursive_Push( buf, self.compression_method ) -- compression method (1 byte)
+    Recursive_Push( buf, self.filter ) -- filter type (1 byte)
+    Recursive_Push( buf, self.interlace_method ) -- interlace method (1 byte)
 
     self:Add_Chunk(type,buf)
 end
