@@ -1372,3 +1372,14 @@ function zip_bi_reverse(code,len)
 
     return res >> 1
 end
+
+function zip_bi_windup()
+    if(zip_bi_valid > 8) then
+        zip_put_short(zip_bi_buf)
+    elseif(zip_bi_valid > 0) then
+        zip_put_byte(zip_bi_buf)
+    end
+
+    zip_bi_buf = 0
+    zip_bi_valid = 0
+end
