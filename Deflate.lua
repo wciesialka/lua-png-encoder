@@ -1201,3 +1201,47 @@ function zip_send_all_trees(lcodes, dcodes, blcodes)
     zip_send_tree(zip_dyn_ltree,lcodes-1)
     zip_send_tree(zip_dyn_dtree,dcodes-1)
 end
+
+function zip_flush_block(eof)
+    local opt_lenb, static_lenb, max_blindex, stored_len
+
+    stored_len = zip_strstart - zip_block_start
+    zip_flag_buf[zip_last_flags] = zip_flags
+
+    zip_build_tree(zip_l_desc)
+    zip_build_tree(zip_d_desc)
+
+    max_blindex = zip_build_bl_tree()
+
+    opt_lenb = (zip_opt_len+3+7) >> 3
+    static_lenb = (zip_static_len+3+7) >> 3
+
+    if(static_lenb <= opt_lenb) then
+        opt_lenb = static_lenb
+    end
+
+    if(stored_len + 4 <= opt_lenb and zip_block_start >= 0) then
+        local i
+        zip_send_bits((zip_STORED_BLOCK<<1)+eof, 3)
+        zip_bi_windup()
+        zip_put_short(stored_len)
+        zip_put_short(~stored_len)
+
+        for i=0,stored_len-1,1 do 
+            zip_put_byte(zip_window[zip_block_start + i])
+        end
+    elseif(static_lenb == opt_lenb) then
+        zip_send_bits((zip_STATIC_TREES<<1)+eof, 3)
+        zip_compress_block(zip_static_ltree, zip_static_dtree)
+    else
+        zip_send_bits((zip_DYN_TREES<<1)+eof, 3)
+        zip_send_all_trees(zip_l_desc.max_code+1, zip_d_desc.max_code+1, max_blindex+1)
+        zip_compress_block(zip_dyn_ltree, zip_dyn_dtree)
+    end
+
+    zip_init_block()
+
+    if(eof ~= 0) then
+        zip_bi_windup()
+    end
+end
