@@ -1108,3 +1108,65 @@ function zip_scan_tree(tree,max_code)
         end
     end
 end
+
+function zip_send_tree(tree, max_code)
+    local n
+    local prevlen = -1
+    local curlen
+    local nextlen = tree[0].dl
+    local count = 0
+    local max_count = 7
+    local min_count = 4
+
+    if(nextlen == 0) then
+        max_count = 128
+        min_count = 3
+    end
+
+    for n=0,max_code,1 do
+        local continue = false
+        curlen = nextlen
+        nextlen = tree[n+1].dl
+        count = count + 1
+        if(count < max_count and curlen == nextlen) then
+            continue = true
+        elseif(count < min_count) then
+            local function mmcount()
+                count = count - 1
+                return count
+            end
+            repeat
+                zip_SEND_CODE(curlen, zip_bl_tree)
+            until not (mmcount() ~= 0)
+        elseif(curlen ~= 0) then
+            if(curlen ~= prevlen) then
+                zip_SEND_CODE(curlen,zip_bl_tree)
+                count = count - 1
+            end
+
+            zip_SEND_CODE(zip_REP_3_6, zip_bl_tree)
+            zip_send_bits(count - 3, 2)
+        elseif(count <= 10) then
+            zip_SEND_CODE(zip_REPZ_3_10, zip_bl_tree)
+            zip_send_bits(count-3, 3)
+        else
+            zip_SEND_CODE(zip_REPZ_11_138, zip_bl_tree)
+            zip_send_bits(count-11, 7)
+        end
+
+        if not continue then
+            count = 0
+            prevlen = curlen
+            if(nextlen == 0) then
+                max_count = 138
+                min_count = 3
+            elseif(curlen == nextlen) then
+                max_count = 6
+                min_count = 3
+            else
+                max_count = 7
+                min_count = 4
+            end
+        end
+    end
+end
