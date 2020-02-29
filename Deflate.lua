@@ -738,3 +738,101 @@ function zip_qcopy(buff, off, buff_size)
     return n
 end
 
+function zip_ct_init()
+    local n, bits, length, code, dist
+
+    if(zip_static_dtree[0].dl ~= 0) then
+        return
+    else
+        zip_l_desc.dyn_tree = zip_dyn_ltree
+        zip_l_desc.static_tree = zip_static_ltree
+        zip_l_desc.extra_bits = zip_extra_lbits
+        zip_l_desc.extra_base = zip_LITERALS + 1
+        zip_l_desc.elems = zip_L_CODES
+        zip_l_desc.max_length = zip_MAX_BITS
+        zip_l_desc.max_code = 0
+
+        zip_d_desc.dyn_tree = zip_dyn_dtree
+        zip_d_desc.static_tree = zip_static_dtree
+        zip_d_desc.extra_bits = zip_extra_dbits
+        zip_d_desc.extra_base = 0
+        zip_d_desc.elems = zip_D_CODES
+        zip_d_desc.max_length = zip_MAX_BITS
+        zip_d_desc.max_code = 0
+
+        zip_bl_desc.dyn_tree = zip_bl_tree
+        zip_bl_desc.static_tree = nil
+        zip_bl_desc.extra_bits = zip_extra_blbits
+        zip_bl_desc.extra_base = 0
+        zip_bl_desc.elems = zip_BL_CODES
+        zip_bl_desc.max_length = zip_MAX_BL_BITS
+        zip_bl_desc.max_code = 0
+
+        length = 0
+
+        for code=0,zip_LENGTH_CODES-2,1 do
+            zip_base_length[code] = length
+            for n=0,(1 << zip_extra_lbits[code]) - 1,1 do
+                zip_length_code[length] = code
+                length = length + 1
+            end
+        end
+
+        zip_length_code[length-1] = code
+
+        dist = 0
+
+        for code=0,15,1 do
+            zip_base_dist[code] = dist
+            for n=0,(1<<zip_extra_dbits[code])-1,1 do
+                zip_dist_code[dist] = code
+                dist = dist + 1
+            end
+        end
+
+        dist = dist >> 7
+        for code=code,zip_D_CODES-1,1 do
+            zip_base_dist[code] = dist << 7
+            for n=0,(1<<(zip_extra_dbits[code]-7))-1,1 do
+                zip_dist_code[256 + dist] = code
+                dist = dist + 1
+            end
+        end
+        
+        for bits=0,zip_MAX_BITS,1 do
+            zip_bl_count[bits] = 0
+        end
+
+        n = 0
+
+        while(n <= 143) do
+            zip_static_ltree[n].dl = 8
+            n = n + 1
+            zip_bl_count[8] = zip_bl_count[8] + 1
+        end
+        while(n <= 255) do
+            zip_static_ltree[n].dl = 9
+            n = n + 1
+            zip_bl_count[9] = zip_bl_count[9] + 1
+        end
+        while(n <= 279) do
+            zip_static_ltree[n].dl = 7
+            n = n + 1
+            zip_bl_count[7] = zip_bl_count[7] + 1
+        end
+        while(n <= 287) do
+            zip_static_ltree[n].dl = 8
+            n = n + 1
+            zip_bl_count[8] = zip_bl_count[8] + 1
+        end
+
+        zip_gen_codes(zip_static_ltree, zip_L_CODES + 1)
+
+        for n=0,zip_D_CODES-1,1 do
+            zip_static_dtree[n].dl = 5
+            zip_static_dtree[n].fc = zip_bi_reverse(n, 5)
+        end
+
+        zip_init_block()
+    end
+end
