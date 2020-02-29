@@ -958,3 +958,22 @@ function zip_gen_bitlen(desc)
         end
     end
 end
+
+function zip_gen_codes(tree, max_code)
+    local next_code = Array(zip_MAX_BITS+1)
+    local code = 0
+    local bits, n
+
+    for bits=1,zip_MAX_BITS,1 do
+        code = ((code + zip_bl_count[bits-1]) << 1)
+        next_code[bits] = code
+    end
+
+    for n=0,max_code,1 do
+        local len = tree[n].dl
+        if not (len == 0) then
+            tree[n].fc = zip_bi_reverse(next_code[len], len)
+            next_code[len] = next_code[len]+1
+        end
+    end
+end
