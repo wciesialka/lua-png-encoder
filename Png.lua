@@ -9,11 +9,11 @@ local function Recursive_Push(target,value)
             if(type(v) == "table") then
                 Recursive_Push(target,v)
             else
-                table.insert(target,v,#target)
+                table.insert(target,v)
             end
         end
     else
-        table.insert(target,val,#target)
+        table.insert(target,val)
     end
 end
 
