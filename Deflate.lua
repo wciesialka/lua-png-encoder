@@ -314,7 +314,8 @@ end
 -- of the hash chain (the most recent string with same hash key). Return
 -- the previous length of the hash chain.
 function zip_INSERT_STRING()
-    zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ~ (zip_window[zip_strstart + zip_MIN_MATCH - 1+1] & 0xff)) & zip_HASH_MASK
+    local index = zip_strstart + zip_MIN_MATCH - 1
+    zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ~ (zip_window[index+1] & 0xff)) & zip_HASH_MASK
     zip_hash_head = zip_head1(zip_ins_h)
     zip_prev[zip_strstart & zip_WMASK+1] = zip_hash_head
     zip_head2(zip_ins_h, zip_strstart)
@@ -339,8 +340,8 @@ end
 function zip_read_buff(buff, offset, n)
     local i = 0
     while(i < n and zip_deflate_pos < #zip_deflate_data) do
+        buff[offset + i + 1] = zip_deflate_data[zip_deflate_pos+1] & 0xFF
         zip_deflate_pos = zip_deflate_pos + 1
-        buff[offset + i+1] = string.byte(zip_deflate_data,zip_deflate_pos,zip_deflate_pos) & 0xFF
         i = i+1
     end
 
@@ -393,6 +394,16 @@ function zip_longest_match(cur_match)
     local len
     local best_len = zip_prev_length
 
+    local function pp_scanp()
+        scanp = scanp + 1
+        return scanp
+    end
+
+    local function pp_matchp()
+        matchp = matchp + 1
+        return matchp
+    end
+
     local zip_lm_init
     if(zip_strstart > zip_MAX_DIST) then
         limit = zip_strstart - zip_MAX_DIST
@@ -413,26 +424,14 @@ function zip_longest_match(cur_match)
     repeat
         matchp = cur_match
 
-        if(zip_window[matchp + best_len+1] ~= scan_end or zip_window[matchp + best_len - 1+1] ~= scan_end1 or zip_window[matchp+1] ~= zip_window[scanp+1] or zip_window[matchp + 1+1] ~= zip_window[scanp + 1+1]) then
+        if(zip_window[matchp + best_len+1] ~= scan_end or zip_window[matchp + best_len - 1+1] ~= scan_end1 or zip_window[matchp+1] ~= zip_window[scanp+1] or zip_window[pp_matchp() +1] ~= zip_window[scanp + 1+1]) then
             continue = true
         end
-
-        matchp = matchp + 1 -- done to combat where a ++matchp would be in the last expression
 
         if(not continue) then
 
             scanp = scanp + 2
             matchp = matchp + 1
-
-            local function pp_scanp()
-                scanp = scanp + 1
-                return scanp
-            end
-
-            local function pp_matchp()
-                matchp = matchp + 1
-                return matchp
-            end
 
             local function cond_check()
                 return zip_window[pp_scanp()+1] == zip_window[pp_matchp()+1]
@@ -543,18 +542,23 @@ function zip_deflate_fast()
             if(zip_match_length <= zip_max_lazy_match) then
                 zip_match_length = zip_match_length-1
 
+                local function mm_zip_match_length()
+                    zip_match_length = zip_match_length - 1
+                    return zip_match_length
+                end
+
                 repeat
                     zip_strstart = zip_strstart + 1
                     zip_INSERT_STRING()
+                until(not (mm_zip_match_length() ~= 0))
 
-                    zip_match_length = zip_match_length - 1
-                until(not (zip_match_length ~= 0))
+                zip_strstart = zip_strstart + 1
             else
                 zip_strstart = zip_strstart + zip_match_length
                 zip_match_length = 0
                 zip_ins_h = zip_window[zip_strstart+1] & 0xFF
 
-                zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ~ (zip_window[zip_strstart + 1+1] & oxFF)) & zip_HASH_MASK
+                zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ~ (zip_window[zip_strstart + 1+1] & 0xFF)) & zip_HASH_MASK
             end
         else
             flush = zip_ct_tally(0, zip_window[zip_strstart+1] & 0xFF)
@@ -1460,13 +1464,12 @@ function zip_deflate(str,level)
         for _j=0,i-1,1 do
             j=_j
             if(j%3 ~= 0 and j ~= 0) then -- if i dont do this then the algorithm doesnt work correctly.
-                cbuf[h] = string.char(buff[j+1])
-                h = h+1
+                table.insert(aout,buff[j+1])
             end
         end
-        aout[#aout+1] = table.concat(cbuf,"")
+        -- aout[#aout+1] = table.concat(cbuf,"")
     end
 
     zip_deflate_data = nil
-    return table.concat(aout,"")
+    return aout
 end

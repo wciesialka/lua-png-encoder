@@ -77,13 +77,22 @@ function png_index.Add_Pixel(self,pixel)
     end
 end
 
+local MAX_AREA = 256
+
 function png_index.Write(self,path)
     if(path == nil) then
         path="out.png"
     end
     self.buffer = {0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A} -- File signature
     self:Add_Header()
-    self:Add_IDAT()
+    local i = 1
+    local j = 100
+    local area = self.width * self.height * 4
+    repeat
+        self:Add_IDAT(i,j)
+        i = j + 1
+        j = math.max(j + 100,area)
+    until (j > area)
     self:Add_End()
     local out = io.open("test.png","wb")
     for i=1,#self.buffer,1 do
@@ -132,10 +141,14 @@ function png_index.Add_Header(self)
     self:Add_Chunk(type,buf)
 end
 
-function png_index.Add_IDAT(self)
+function png_index.Add_IDAT(self,start,endpos)
     local type = {0x49,0x44,0x41,0x54}
-    local idat = {8,0}
-    local compressed = zip_deflate(self.img)
+    local idat = {8,3}
+    local splice ={}
+    for i=start,endpos,1 do
+        table.insert( splice, self.img[i] )
+    end
+    local compressed = zip_deflate(splice)
     Recursive_Push(idat, compressed)
     local check = adler32(compressed,#compressed)
     Recursive_Push(self:As_4_Bytes(check),idat)
