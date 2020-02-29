@@ -30,6 +30,7 @@ function png_meta.New(self,width,height)
     png.color_type = 6
     png.compression_method = 0
     png.interlace_method = 0
+    png.i = 0
 
     png.img = {}
 
@@ -54,12 +55,18 @@ function png_index.Add_Pixel(self,pixel)
         error("Cannot add any more pixels to PNG, width and height met.")
     else
         if(self.current_width == 0) then
-            table.insert(self.img,self.filter)
+            self.img[self.i] = self.filter
+            self.i = self.i + 1
         end
-        table.insert(self.img,pixel.r)
-        table.insert(self.img,pixel.g)
-        table.insert(self.img,pixel.b)
-        table.insert(self.img,pixel.a)
+        self.img[self.i] = pixel.r
+        self.img[self.i + 1] = pixel.g
+        self.img[self.i + 2] = pixel.b
+        if(pixel.a ~= nil) then
+            self.img[self.i + 3] = pixel.a
+        else
+            self.img[self.i + 3] = 0
+        end
+        self.i = self.i + 4
         self.current_width = self.current_width + 1
         if(self.current_width == self.width) then
             self.current_height = self.current_height + 1
