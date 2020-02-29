@@ -613,3 +613,66 @@ function zip_deflate_better()
         end
     end
 end
+
+function zip_init_deflate()
+    if(zip_eofile) then
+        return
+    else
+        zip_bi_buf = 0
+        zip_bi_valid = 0
+        zip_ct_init()
+        zip_lm_init()
+        zip_qhead = nil
+        zip_outcnt = 0
+        zip_outoff = 0
+        zip_match_available = 0
+
+        if(zip_compr_level <= 3) then
+            zip_prev_length = zip_MIN_MATCH - 1
+            zip_match_available = 0
+        else
+            zip_match_length = zip_MIN_MATCH - 1
+            zip_match_available = 0
+        end
+
+        zip_complete = false
+    end
+end
+
+function zip_deflate_internal(buff, off, buff_size)
+    local n
+    if(not zip_initflag) then
+        zip_init_deflate()
+        zip_initflag = true
+        if(zip_lookahead == 0) then
+            zip_complete = 0
+            return 0
+        end
+    end
+
+    n = zip_qcopy(buff,off,buff_size)
+
+    if(n == buff_size) then
+        return buff_size
+    end
+
+    if(zip_complete) then
+        return n
+    end
+
+    if(zip_compr_level <= 3) then
+        zip_deflate_fast()
+    else
+        zip_deflate_better()
+    end
+
+    if(zip_lookahead == 0) then
+        if(zip_match_available ~= 0) then
+            zip_ct_tally(0, zip_window[zip_strstart - 1] & 0xFF)
+        end
+        zip_flush_block(1)
+        zip_complete = true
+    end
+
+    return (n+ zip_qcopy(buff, n+off, buff_size - n))
+end
