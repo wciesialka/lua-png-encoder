@@ -836,3 +836,26 @@ function zip_ct_init()
         zip_init_block()
     end
 end
+
+function zip_init_block()
+    local n
+
+    for n=0,zip_L_CODES-1,1 do
+        zip_dyn_ltree[n].fc = 0
+    end
+    for n=0,zip_D_CODES-1,1 do
+        zip_dyn_dtree[n].fc = 0
+    end
+    for n=0,zip_BL_CODES-1,1 do
+        zip_dyn_bltree[n].fc = 0
+    end
+
+    zip_dyn_ltree[zip_END_BLOCK].fc = 1
+    zip_static_len = 0
+    zip_opt_len = zip_static_len
+    zip_last_flags = 0
+    zip_last_dist = zip_last_flags
+    zip_last_lit = zip_last_dist
+    zip_flags = 0
+    zip_flag_bit = 1
+end
