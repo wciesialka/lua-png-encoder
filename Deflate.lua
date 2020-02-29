@@ -340,7 +340,7 @@ function zip_read_buff(buff, offset, n)
     local i = 0
     while(i < n and zip_deflate_pos < #zip_deflate_data) do
         zip_deflate_pos = zip_deflate_pos + 1
-        buff[offset + i+1] = utf8.codepoint(zip_deflate_data,zip_deflate_pos,zip_deflate_pos) & 0xFF
+        buff[offset + i+1] = string.byte(zip_deflate_data,zip_deflate_pos,zip_deflate_pos) & 0xFF
         i = i+1
     end
 
@@ -1455,12 +1455,16 @@ function zip_deflate(str,level)
         return i > 0
     end
     while(cond()) do
-        local cbuf = Array(i)
+        local cbuf = {}
+        local h = 1
         for _j=0,i-1,1 do
             j=_j
-            cbuf[j+1] = utf8.codepoint(buff[j+1])
+            if(j%3 ~= 0 and j ~= 0) then -- if i dont do this then the algorithm doesnt work correctly.
+                cbuf[h] = string.char(buff[j+1])
+                h = h+1
+            end
         end
-        table.insert(aout,table.concat(cbuf,""))
+        aout[#aout+1] = table.concat(cbuf,"")
     end
 
     zip_deflate_data = nil
