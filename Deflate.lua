@@ -433,8 +433,8 @@ function zip_longest_match(cur_match)
                 return zip_window[pp_scanp()] == zip_window[pp_matchp()]
             end
 
-            do
-
+            repeat
+                -- do nothing
             until not (cond_check() and cond_check() and cond_check() and cond_check() and cond_check() and cond_check() and cond_check() and cond_check() and scanp < strendp)
 
             len = zip_MAX_MATCH - (strendp - scanp)
@@ -589,7 +589,7 @@ function zip_deflate_better()
 
             zip_lookahead = zip_lookahead - zip_prev_length - 1
             zip_prev_length = zip_prev_length - 2
-            do
+            repeat
                 zip_strstart = zip_strstart + 1
                 zip_INSERT_STRING()
 
