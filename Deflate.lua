@@ -1,7 +1,7 @@
 local function Array(n) -- function to create a table with a preset length, like a C-style array
     local t = {}
     for i=1,n,1 do
-        t[i] = nil
+        table.insert(t,0)
     end
     return t
 end
@@ -9,7 +9,7 @@ end
 local function Array_Function(n,f,...)
     local t = {}
     for i=1,n,1 do
-        t[i]=f(...)
+        table.insert(t,f(...))
     end
     return t
 end
@@ -314,7 +314,7 @@ end
 -- of the hash chain (the most recent string with same hash key). Return
 -- the previous length of the hash chain.
 function zip_INSERT_STRING()
-    zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ^ (zip_window[zip_strstart + zip_MIN_MATCH - 1+1] & 0xff)) & zip_HASH_MASK
+    zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ~ (zip_window[zip_strstart + zip_MIN_MATCH - 1+1] & 0xff)) & zip_HASH_MASK
     zip_hash_head = zip_head1(zip_ins_h)
     zip_prev[zip_strstart & zip_WMASK+1] = zip_hash_head
     zip_head2(zip_ins_h, zip_strstart)
@@ -350,7 +350,8 @@ end
 function zip_lm_init()
     local j
 
-    for j=0,zip_HASH_SIZE-1,1 do
+    for _j=0,zip_HASH_SIZE-1,1 do
+        j=_j
         zip_prev[zip_WSIZE + j+1] = 0
     end
 
@@ -379,7 +380,8 @@ function zip_lm_init()
     end
 
     zip_ins_h = 0
-    for j=0,zip_MIN_MATCH - 2, 1 do
+    for _j=0,zip_MIN_MATCH - 2, 1 do
+        j=_j
         zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ~ (zip_window[j+1] & 0xFF))
     end
 end
@@ -477,7 +479,8 @@ function zip_fill_window()
     if(more == -1) then
         more = more - 1
     elseif(zip_strstart >= zip_WSIZE + zip_MAX_DIST) then
-        for n=0, zip_WSIZE-1, 1 do
+        for _n=0, zip_WSIZE-1, 1 do
+            n=_n
             zip_window[n+1] = zip_window[n + zip_WSIZE+1]
         end
 
@@ -485,7 +488,8 @@ function zip_fill_window()
         zip_strstart = zip_strstart - zip_WSIZE
         zip_block_start = zip_block_start - zip_WSIZE
 
-        for n=0, zip_HASH_SIZE-1, 1 do
+        for _n=0, zip_HASH_SIZE-1, 1 do
+            n=_n
             m = zip_head1(n)
             if(m >= zip_WSIZE) then
                 zip_head2(n,m-zip_WSIZE)
@@ -494,7 +498,8 @@ function zip_fill_window()
             end
         end
 
-        for n=0, zip_WSIZE - 1, 1 do
+        for _n=0, zip_WSIZE - 1, 1 do
+            n=_n
             m = zip_prev[n+1]
             if(m >= zip_WSIZE) then
                 zip_prev[n+1] = m - zip_WSIZE
@@ -701,7 +706,8 @@ function zip_qcopy(buff, off, buff_size)
         if(i > #zip_qhead) then
             i = #zip_qhead
         end
-        for j=0,i-1,1 do
+        for _j=0,i-1,1 do
+            j=_j
             buff[off + n + j+1] = zip_qhead.ptr[zip_qhead.off + j+1]
         end
 
@@ -728,7 +734,8 @@ function zip_qcopy(buff, off, buff_size)
             i = zip_outcnt - zip_outoff
         end
 
-        for j=0,i-1,1 do
+        for _j=0,i-1,1 do
+            j=_j
             buff[off + n + j+1] = zip_outbuf[zip_outoff + j+1]
         end
         zip_outoff = zip_outoff + i
@@ -743,7 +750,6 @@ end
 
 function zip_ct_init()
     local n, bits, length, code, dist
-
     if(zip_static_dtree[0+1].dl ~= 0) then
         return
     else
@@ -773,9 +779,11 @@ function zip_ct_init()
 
         length = 0
 
-        for code=0,zip_LENGTH_CODES-2,1 do
+        for _code=0,zip_LENGTH_CODES-2,1 do
+            code=_code
             zip_base_length[code+1] = length
-            for n=0,(1 << zip_extra_lbits[code+1]) - 1,1 do
+            for _n=0,(1 << zip_extra_lbits[code+1]) - 1,1 do
+                n=_n
                 zip_length_code[length+1] = code
                 length = length + 1
             end
@@ -784,28 +792,29 @@ function zip_ct_init()
         zip_length_code[length-1+1] = code
 
         dist = 0
-
-        local _code
-
-        for code=0,15,1 do
+        for _code=0,15,1 do
+            code=_code
             zip_base_dist[code+1] = dist
-            for n=0,(1<<zip_extra_dbits[code+1])-1,1 do
+            for _n=0,(1<<zip_extra_dbits[code+1])-1,1 do
+                n=_n
                 zip_dist_code[dist+1] = code
                 dist = dist + 1
             end
-            _code = code
         end
 
         dist = dist >> 7
-        for code=_code,zip_D_CODES-1,1 do
+        for _code=code,zip_D_CODES-1,1 do
+            code=_code
             zip_base_dist[code+1] = dist << 7
-            for n=0,(1<<(zip_extra_dbits[code+1]-7))-1,1 do
+            for _n=0,(1<<(zip_extra_dbits[code+1]-7))-1,1 do
+                n=_n
                 zip_dist_code[256 + dist+1] = code
                 dist = dist + 1
             end
         end
         
-        for bits=0,zip_MAX_BITS,1 do
+        for _bits=0,zip_MAX_BITS,1 do
+            bits=_bits
             zip_bl_count[bits+1] = 0
         end
 
@@ -834,7 +843,8 @@ function zip_ct_init()
 
         zip_gen_codes(zip_static_ltree, zip_L_CODES + 1)
 
-        for n=0,zip_D_CODES-1,1 do
+        for _n=0,zip_D_CODES-1,1 do
+            n=_n
             zip_static_dtree[n+1].dl = 5
             zip_static_dtree[n+1].fc = zip_bi_reverse(n, 5)
         end
@@ -846,13 +856,16 @@ end
 function zip_init_block()
     local n
 
-    for n=0,zip_L_CODES-1,1 do
+    for _n=0,zip_L_CODES-1,1 do
+        n=_n
         zip_dyn_ltree[n+1].fc = 0
     end
-    for n=0,zip_D_CODES-1,1 do
+    for _n=0,zip_D_CODES-1,1 do
+        n=_n
         zip_dyn_dtree[n+1].fc = 0
     end
-    for n=0,zip_BL_CODES-1,1 do
+    for _n=0,zip_BL_CODES-1,1 do
+        n=_n
         zip_bl_tree[n+1].fc = 0
     end
 
@@ -871,20 +884,20 @@ function zip_pqdownheap(tree, k)
     local j = k << 1
 
     while(j <= zip_heap_len) do
-        if(j< zip_heap_len and zip_SMALLER(tree, zip_heap[j+1+1],zip_head[j+1])) then
+        if(j< zip_heap_len and zip_SMALLER(tree, zip_heap[j+1+1],zip_heap[j+1])) then
             j = j + 1
         end
 
-        if(zip_SMALLER(tree,v,zip_head[j+1])) then
+        if(zip_SMALLER(tree,v,zip_heap[j+1])) then
             break
         end
 
-        zip_head[k+1] = zip_head[j+1]
+        zip_heap[k+1] = zip_heap[j+1]
         k = j
 
         j = j << 1
     end
-    zip_head[k+1] = v 
+    zip_heap[k+1] = v 
 end
 
 function zip_gen_bitlen(desc)
@@ -899,14 +912,16 @@ function zip_gen_bitlen(desc)
     local continue = false
     local continue2 = false
 
-    for bits=0,zip_MAX_BITS,1 do
+    for _bits=0,zip_MAX_BITS,1 do
+        bits=_bits
         zip_bl_count[bits+1] = 0
     end
 
     tree[zip_heap[zip_heap_max+1]+1].dl = 0
 
-    for h=zip_heap_max+1,zip_HEAP_SIZE-1,1 do
-        n = zip_heap[n+1]
+    for _h=zip_heap_max+1,zip_HEAP_SIZE-1,1 do
+        h=_h
+        n = zip_heap[h+1]
         bits = tree[tree[n+1].dl+1].dl + 1
         if(bits > max_length) then
             bits = max_length
@@ -945,11 +960,12 @@ function zip_gen_bitlen(desc)
             overflow = overflow - 2
         until(not (overflow > 0))
 
-        for bits=max_length,1,-1 do
+        for _bits=max_length,1,-1 do
+            bits=_bits
             n = zip_bl_count[bits+1]
             while(n ~= 0) do
                 h = h - 1
-                m = zip_head[h+1]
+                m = zip_heap[h+1]
                 if(m > max_code) then
                     continue2 = true
                 end
@@ -970,12 +986,14 @@ function zip_gen_codes(tree, max_code)
     local code = 0
     local bits, n
 
-    for bits=1,zip_MAX_BITS,1 do
+    for _bits=1,zip_MAX_BITS,1 do
+        bits=_bits
         code = ((code + zip_bl_count[bits-1+1]) << 1)
         next_code[bits+1] = code
     end
 
-    for n=0,max_code,1 do
+    for _n=0,max_code,1 do
+        n=_n
         local len = tree[n+1].dl
         if not (len == 0) then
             tree[n+1].fc = zip_bi_reverse(next_code[len+1], len)
@@ -995,7 +1013,8 @@ function zip_build_tree(desc)
     zip_heap_len = 0
     zip_heap_max = zip_HEAP_SIZE
 
-    for n=0,elems-1,1 do
+    for _n=0,elems-1,1 do
+        n=_n
         if(tree[n+1].fc ~= 0) then
             max_code = n
             zip_heap_len = zip_heap_len + 1
@@ -1024,7 +1043,8 @@ function zip_build_tree(desc)
 
     desc.max_code = max_code
 
-    for n=(zip_heap_len >> 1),1,-1 do
+    for _n=(zip_heap_len >> 1),1,-1 do
+        n=_n
         zip_pqdownheap(tree, n)
     end
 
@@ -1078,7 +1098,8 @@ function zip_scan_tree(tree,max_code)
     end
     tree[max_code + 1+1].dl = 0xFFFF
 
-    for n=0,max_code,1 do
+    for _n=0,max_code,1 do
+        n=_n
         local continue = false
         curlen = nextlen
         nextlen = tree[n+1+1].dl
@@ -1128,7 +1149,8 @@ function zip_send_tree(tree, max_code)
         min_count = 3
     end
 
-    for n=0,max_code,1 do
+    for _n=0,max_code,1 do
+        n=_n
         local continue = false
         curlen = nextlen
         nextlen = tree[n+1+1].dl
@@ -1183,7 +1205,8 @@ function zip_build_bl_tree()
     zip_scan_tree(zip_dyn_dtree, zip_d_desc.max_code)
     zip_build_tree(zip_bl_desc)
 
-    for max_blindex=zip_BL_CODES-1,3,-1 do
+    for _max_blindex=zip_BL_CODES-1,3,-1 do
+        max_blindex=_max_blindex
         if(zip_bl_tree[zip_bl_order[max_blindex+1]+1].dl ~= 0) then
             break
         end
@@ -1199,7 +1222,8 @@ function zip_send_all_trees(lcodes, dcodes, blcodes)
     zip_send_bits(lcodes-257, 5)
     zip_send_bits(dcodes-1,   5)
     zip_send_bits(blcodes-4,  4)
-    for rank=0,blcodes-1,1 do
+    for _rank=0,blcodes-1,1 do
+        rank=_rank
         zip_send_bits(zip_bl_tree[zip_bl_order[rank+1]+1].dl, 3)
     end
 
@@ -1232,7 +1256,8 @@ function zip_flush_block(eof)
         zip_put_short(stored_len)
         zip_put_short(~stored_len)
 
-        for i=0,stored_len-1,1 do 
+        for _i=0,stored_len-1,1 do 
+            i=_i
             zip_put_byte(zip_window[zip_block_start + i+1])
         end
     elseif(static_lenb == opt_lenb) then
@@ -1287,7 +1312,8 @@ function zip_ct_tally(dist,lc)
         local in_length = zip_strstart - zip_block_start
         local dcode
 
-        for dcode=0, zip_D_CODES-1, 1 do
+        for _dcode=0, zip_D_CODES-1, 1 do
+            dcode=_dcode
             out_length = out_length + (zip_dyn_dtree[dcode+1].fc * (5 + zip_extra_dbits[dcode+1]))
         end
 
@@ -1401,7 +1427,8 @@ function zip_qoutbuf()
         end
 
         q.len = zip_outcnt - zip_outoff
-        for i=0,q.len-1,1 do
+        for _i=0,q.len-1,1 do
+            i=_i
             q.ptr[i+1] = zip_outbuf[zip_outoff + i+1]
         end
 
@@ -1429,12 +1456,13 @@ function zip_deflate(str,level)
     end
     while(cond()) do
         local cbuf = Array(i)
-        for j=0,i-1,1 do
+        for _j=0,i-1,1 do
+            j=_j
             cbuf[j+1] = utf8.codepoint(buff[j+1])
         end
-        aout[aout.length+1] = table.concat(cbuf,"")
+        table.insert(aout,table.concat(cbuf,""))
     end
 
     zip_deflate_data = nil
-    return table.concat(aout, "")
+    return table.concat(aout,"")
 end
