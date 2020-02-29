@@ -859,3 +859,24 @@ function zip_init_block()
     zip_flags = 0
     zip_flag_bit = 1
 end
+
+function zip_pqdownheap(tree, k)
+    local v = zip_heap[k]
+    local j = k << 1
+
+    while(j <= zip_heap_len) do
+        if(j< zip_heap_len and zip_SMALLER(tree, zip_heap[j+1],zip_head[j])) then
+            j = j + 1
+        end
+
+        if(zip_SMALLER(tree,v,zip_head[j])) then
+            break
+        end
+
+        zip_head[k] = zip_head[j]
+        k = j
+
+        j = j << 1
+    end
+    zip_head[k] = v 
+end
