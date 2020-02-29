@@ -17,14 +17,21 @@ function color_meta.New(self, r, g, b, a)
         setmetatable(color, color_meta)
 
         return color
+    elseif(type(r) == "number" and g == nil and b == nil and a == nil) then
+
+        local color = {} -- create a new color
+
+        color.r = (r >> 24) & 0xFF
+        color.g = (r >> 16) & 0xFF
+        color.b = (r >>  8) & 0xFF
+        color.a = (r      ) & 0xFF
+        
+        setmetatable(color, color_meta)
+
+        return color
     else -- regular constructor
         if(r == nil) then
-            r = 0
-        elseif(g == nil and b == nil and a == nil) then
-            self.r = r & 0xFF000000
-            self.g = r & 0x00FF0000
-            self.b = r & 0x0000FF00
-            self.a = r & 0x000000FF
+            error("Invalid argument passed to Color.New(). Must specify Red value.")
         elseif(type(r) ~= "number") then
             error("Invalid argument passed to Color.New(). Argument 1 must be a number.")
         elseif(r < 0 or r > 255) then
@@ -34,7 +41,7 @@ function color_meta.New(self, r, g, b, a)
         end
 
         if(g == nil) then
-            error("Invalid argument passed to Color.New(). Must specify Green and Blue.")
+            error("Invalid argument passed to Color.New(). Must specify Green value.")
         elseif(type(g) ~= "number") then
             error("Invalid argument passed to Color.New(). Argument 2 must be a number.")
         elseif(g < 0 or g > 255) then
@@ -44,7 +51,7 @@ function color_meta.New(self, r, g, b, a)
         end
 
         if(b == nil) then
-            error("Invalid argument passed to Color.New(). Must specify Green and Blue.")
+            error("Invalid argument passed to Color.New(). Must specify Blue value.")
         elseif(type(b) ~= "number") then
             error("Invalid argument passed to Color.New(). Argument 3 must be a number.")
         elseif(b < 0 or b > 255) then
