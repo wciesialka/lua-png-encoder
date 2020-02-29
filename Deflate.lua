@@ -1383,3 +1383,26 @@ function zip_bi_windup()
     zip_bi_buf = 0
     zip_bi_valid = 0
 end
+
+function zip_qoutbuf()
+    if(zip_outcnt ~= 0) then
+        local q, i
+        q = zip_new_queue()
+        if(zip_qhead == nil) then
+            zip_qtail = q
+            zip_qhead = zip_qtail
+        else
+            zip_qtail.next = q
+            zip_qtail = zip_qtail.next
+        end
+
+        q.len = zip_outcnt - zip_outoff
+        for i=0,q.len-1,1 do
+            q.ptr[i] = zip_outbuf[zip_outoff + i]
+        end
+
+        zip_outoff = 0
+        zip_outcnt = zip_outoff
+    end
+end
+
