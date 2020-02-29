@@ -1188,3 +1188,16 @@ function zip_build_bl_tree()
 
     return max_blindex
 end
+
+function zip_send_all_trees(lcodes, dcodes, blcodes)
+    local rank
+    zip_send_bits(lcodes-257, 5)
+    zip_send_bits(dcodes-1,   5)
+    zip_send_bits(blcodes-4,  4)
+    for rank=0,blcodes-1,1 do
+        zip_send_bits(zip_bl_tree[zip_bl_order[rank]].dl, 3)
+    end
+
+    zip_send_tree(zip_dyn_ltree,lcodes-1)
+    zip_send_tree(zip_dyn_dtree,dcodes-1)
+end
