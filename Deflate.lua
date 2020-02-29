@@ -1355,3 +1355,20 @@ function zip_send_bits(value, length)
         zip_bi_valid + zip_bi_valid + length
     end
 end
+
+function zip_bi_reverse(code,len)
+
+    local function mmlen()
+        len = len - 1
+        return len
+    end
+
+    local res = 0
+    repeat
+        res = res | (code & 1)
+        code = code >> 1
+        res = res << 1
+    until not (mmlen > 0)
+
+    return res >> 1
+end
