@@ -1406,3 +1406,31 @@ function zip_qoutbuf()
     end
 end
 
+function zip_deflate(str,level)
+    local i,j
+
+    zip_deflate_data = str
+    zip_deflate_pos = 0
+
+    if(level == nil) then
+        level = zip_DEFAULT_LEVEL
+    end
+
+    zip_deflate_start(level)
+    local buff = Array(1024)
+    local aout = {}
+    local function cond()
+        i = zip_deflate_internal(buff, 0, buff.length)
+        return i > 0
+    end
+    while(cond()) do
+        local cbuf = Array(i)
+        for j=0,i-1,1 do
+            cbuf[j] = utf8.codepoint(buff[j])
+        end
+        aout[aout.length] = table.concat(cbuf,"")
+    end
+
+    zip_deflate_data = nil
+    return table.concat(aout, "")
+end
