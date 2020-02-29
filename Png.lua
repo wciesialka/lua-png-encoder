@@ -1,9 +1,11 @@
 require('Color')
 require('crc')
+require('Deflate')
+require('adler')
 
 local png_meta = {}
 
-local function Recursive_Push(target,value)
+local function Recursive_Push(target,val)
     if(type(val) == "table") then
         for _,v in pairs(val) do
             if(type(v) == "table") then
@@ -30,7 +32,7 @@ function png_meta.New(self,width,height)
     png.color_type = 6
     png.compression_method = 0
     png.interlace_method = 0
-    png.i = 0
+    png.i = 1
 
     png.img = {}
 
@@ -75,6 +77,20 @@ function png_index.Add_Pixel(self,pixel)
     end
 end
 
+function png_index.Write(self,path)
+    if(path == nil) then
+        path="out.png"
+    end
+    self.buffer = {0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A} -- File signature
+    self:Add_Header()
+    self:Add_IDAT()
+    self:Add_End()
+    local out = io.open("test.png","wb")
+    for i=1,#self.buffer,1 do
+        out:write(string.char(self.buffer[i]))
+    end
+end
+
 -- Add Image
 -- Expects a 2D array of color metatables
 
@@ -103,7 +119,7 @@ end
 
 
 function png_index.Add_Header(self)
-    local type = {49,48,44,52} -- IHDR
+    local type = {0x49,0x48,0x44,0x52} -- IHDR
     local buf = {}
     Recursive_Push( buf, self:As_4_Bytes( self.width  ) ) -- width (4 bytes)
     Recursive_Push( buf, self:As_4_Bytes( self.height ) ) -- height (4 bytes)
@@ -114,6 +130,16 @@ function png_index.Add_Header(self)
     Recursive_Push( buf, self.interlace_method ) -- interlace method (1 byte)
 
     self:Add_Chunk(type,buf)
+end
+
+function png_index.Add_IDAT(self)
+    local type = {0x49,0x44,0x41,0x54}
+    local idat = {8,0}
+    local compressed = zip_deflate(self.img)
+    Recursive_Push(idat, compressed)
+    local check = adler32(compressed,#compressed)
+    Recursive_Push(self:As_4_Bytes(check),idat)
+    self:Add_Chunk(type,idat)
 end
 
 function png_index.Add_End(self)
