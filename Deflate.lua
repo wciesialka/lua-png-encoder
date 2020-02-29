@@ -1170,3 +1170,21 @@ function zip_send_tree(tree, max_code)
         end
     end
 end
+
+function zip_build_bl_tree()
+    local max_blindex
+
+    zip_scan_tree(zip_dyn_ltree, zip_l_desc.max_code)
+    zip_scan_tree(zip_dyn_dtree, zip_d_desc.max_code)
+    zip_build_tree(zip_bl_desc)
+
+    for max_blindex=zip_BL_CODES-1,3,-1 do
+        if(zip_bl_tree[zip_bl_order[max_blindex]].dl ~= 0) then
+            break
+        end
+    end
+
+    zip_opt_len = zip_opt_len + (3*(max_blindex+1) + 5+5+4)
+
+    return max_blindex
+end
