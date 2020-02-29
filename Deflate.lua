@@ -120,6 +120,7 @@ local zip_opt_len
 local zip_static_len
 local zip_deflate_data
 local zip_deflate_pos
+local zip_Buf_size = 16
 
 -- tables
 
@@ -1341,4 +1342,16 @@ function zip_compress_block(ltree, dtree)
     end
 
     zip_SEND_CODE(zip_END_BLOCK, ltree)
+end
+
+function zip_send_bits(value, length)
+    if(zip_bi_valid > zip_Buf_size - length) then
+        zip_bi_buf = zip_bi_buf | (value << zip_bi_valid)
+        zip_put_short(zip_bi_buf)
+        zip_bi_buf = (value >> (zip_Buf_size - zip_bi_valid))
+        zip_bi_valid = zip_bi_valid + (length - zip_Buf_size)
+    else
+        zip_bi_buf = zip_bi_buf | (value << zip_bi_valid)
+        zip_bi_valid + zip_bi_valid + length
+    end
 end
