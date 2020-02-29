@@ -195,7 +195,7 @@ function zip_deflate_start(level)
     zip_compr_level = level
     zip_initflag = false
     zip_eofile = false
-    if(zip_outbuf != nil) then
+    if(zip_outbuf ~= nil) then
         return
     end
 
@@ -549,6 +549,66 @@ function zip_deflate_fast()
         end
 
         while(zip_lookahead < zip_MIN_LOOKAHEAD and (not zip_eofile)) do
+            zip_fill_window()
+        end
+    end
+end
+
+function zip_deflate_better()
+    while(zip_lookahead ~= 0 and zip_qhead == nil) do
+        zip_INSERT_STRING()
+        zip_prev_length = zip_match_length
+        zip_prev_match = zip_match_start
+        zip_match_length = zip_MIN_MATCH-1
+
+        if(zip_hash_head ~= zip_NIL and zip_prev_length < zip_max_lazy_match and zip_strstart - zip_hash_head <= zip_MAX_DIST) then
+
+            zip_match_length = zip_longest_match(zip_hash_head)
+            if(zip_match_length > zip_lookahead) then
+                zip_match_length = zip_lookahead
+            end
+
+            if(zip_match_length == zip_MIN_MATCH and zip_strstart - zip_match_start > zip_TOO_FAR) then
+                zip_match_length = zip_match_length - 1
+            end
+
+        end
+
+        if(zip_prev_length >= zip_MIN_MATCH and zip_match_length <= zip_prev_length) then
+            local flush = zip_ct_tally(zip_strstart - 1 - zip_prev_match, zip_prev_length - zip_MIN_MATCH)
+
+            zip_lookahead = zip_lookahead - zip_prev_length - 1
+            zip_prev_length = zip_prev_length - 2
+            do
+                zip_strstart = zip_strstart + 1
+                zip_INSERT_STRING()
+
+                zip_prev_length = zip_prev_length - 1
+            until(not (zip_prev_length ~= 0))
+
+            zip_match_available = 0
+            zip_match_length = zip_MIN_MATCH - 1
+            zip_strstart = zip_strstart + 1
+
+            if(flush) then
+                zip_flush_block(0)
+                zip_block_start = zip_strstart
+            end
+        elseif(zip_match_available ~= 0) then
+            if(zip_ct_tally(0,zip_window[zip_strstart - 1] & 0xFF)) then
+                zip_flush_block(0)
+                zip_block_start = zip_strstart
+            end
+
+            zip_strstart = zip_strstart + 1
+            zip_lookahead = zip_lookahead - 1
+        else
+            zip_match_available = 1
+            zip_strstart = zip_strstart + 1
+            zip_lookahead = zip_lookahead - 1
+        end
+        
+        while(zip_lookahead < zip_MIN_LOOKAHEAD and not zip_eofile) do
             zip_fill_window()
         end
     end
