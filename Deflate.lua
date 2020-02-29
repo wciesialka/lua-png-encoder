@@ -1352,7 +1352,7 @@ function zip_send_bits(value, length)
         zip_bi_valid = zip_bi_valid + (length - zip_Buf_size)
     else
         zip_bi_buf = zip_bi_buf | (value << zip_bi_valid)
-        zip_bi_valid + zip_bi_valid + length
+        zip_bi_valid = zip_bi_valid + length
     end
 end
 
