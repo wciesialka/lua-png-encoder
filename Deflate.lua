@@ -880,3 +880,81 @@ function zip_pqdownheap(tree, k)
     end
     zip_head[k] = v 
 end
+
+function zip_gen_bitlen(desc)
+    local tree = desc.dyn_tree
+    local extra = desc.extra_bits
+    local base = desc.extra_base
+    local max_code = desc.max_code
+    local max_length = desc.max_length
+    local stree = desc.static_tree
+    local h,n,m,bits,xbits,f
+    local overflow = 0
+    local continue = false
+    local continue2 = false
+
+    for bits=0,zip_MAX_BITS,1 do
+        zip_bl_count[bits] = 0
+    end
+
+    tree[zip_heap[zip_heap_max]].dl = 0
+
+    for h=zip_heap_max+1,zip_HEAP_SIZE-1,1 do
+        n = zip_heap[n]
+        bits = tree[tree[n].dl].dl + 1
+        if(bits > max_length) then
+            bits = max_length
+            overflow = overflow + 1
+        end
+        tree[n].dl = bits
+
+        if(n > max_code)
+            continue = true
+        end
+
+        if not continue then
+            zip_bl_count[bits] = zip_bl_count[bits] + 1
+            xbits = 0
+            if(n >= base) then
+                xbits = extra[n - base]
+            end
+            f = tree[n].fc
+            zip_opt_len = zip_opt_len + (f * (bits + xbits))
+            if(stree ~= nil) then
+                zip_static_len = zip_static_len + (f * (stree[n].dl + xbits))
+            end
+        end
+    end
+    if(overflow == 0) then
+        return
+    else
+        repeat
+            bits = max_length - 1
+            while(zip_bl_count[bits] == 0) do
+                bits = bits - 1
+            end
+            zip_bl_count[bits] = zip_bl_count[bits] - 1
+            zip_bl_count[bits + 1] = zip_bl_count[bits + 1] + 2
+            zip_bl_count[max_length] = zip_bl_count[max_length] - 1
+            overflow = overflow - 2
+        until(not (overflow > 0))
+
+        for bits=max_length,1,-1 do
+            n = zip_bl_count[bits]
+            while(n != 0) do
+                h = h - 1
+                m = zip_head[h]
+                if(m > max_code) then
+                    continue2 = true
+                end
+                if(not continue2) then
+                    if(tree[m].dl != bits) then
+                        zip_opt_len = zip_opt_len + ((bits - tree[m].dl) * tree[m].fc)
+                        tree[m].fc = bits;
+                    end
+                    n = n - 1
+                end
+            end
+        end
+    end
+end
