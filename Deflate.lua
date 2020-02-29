@@ -977,3 +977,82 @@ function zip_gen_codes(tree, max_code)
         end
     end
 end
+
+function zip_build_tree(desc)
+    local tree = desc.dyn_tree
+    local stree = desc.static_tree
+    local elems = desc.elems
+    local n,m
+    local max_code = -1
+    local node = elems
+
+    zip_heap_len = 0
+    zip_heap_max = zip_HEAP_SIZE
+
+    for n=0,elems-1,1 do
+        if(tree[n].fc ~= 0) then
+            max_code = n
+            zip_heap_len = zip_heap_len + 1
+            zip_heap[zip_heap_len] = max_code
+            zip_depth[n] = 0
+        else
+            tree[n].dl = 0
+        end
+    end
+
+    while(zip_heap_len < 2) do
+        local xnew = 0
+        if(max_code < 2) then
+            max_code = max_code + 1
+            xnew = max_code
+        end
+        zip_heap_len = zip_heap_len + 1
+        zip_heap[zip_heap_len] = xnew
+        tree[xnew].fc = 1
+        zip_depth[xnew] = 0
+        zip_opt_len = zip_opt_len - 1
+        if(stree ~= nil) then
+            zip_static_len = zip_static_len - (stree[xnew].dl)
+        end
+    end
+
+    desc.max_code = max_code
+
+    for n=(zip_heap_len >> 1),1,-1 do
+        zip_pqdownheap(tree, n)
+    end
+
+    repeat
+        n = zip_heap[zip_SMALLEST]
+        zip_heap[zip_SMALLEST] = zip_heap[zip_heap_len]
+        zip_heap_len = zip_heap_len - 1
+        zip_pqdownheap(tree,zip_SMALLEST)
+
+        m = zip_heap[zip_SMALLEST]
+
+        zip_heap_max = zip_heap_max - 1
+        zip_heap[zip_heap_max] = n
+        zip_heap_max = zip_heap_max - 1
+        zip_heap[zip_heap_max] = m
+
+        tree[node].fc = tree[n].fc + tree[m].fc
+
+        if(zip_depth[n] > zip_depth[m] + 1) then
+            zip_depth[node] = zip_depth[n]
+        else
+            zip_depth[node] = zip_depth[m] + 1
+        end
+        tree[m].dl = node
+        tree[n].dl = tree[m].dl
+        zip_heap[zip_SMALLEST] = node
+        node = node + 1
+        zip_pqdownheap(tree, zip_SMALLEST)
+    until not (zip_heap_len >= 2)
+
+    zip_heap_max = zip_heap_max - 1
+    zip_heap[zip_heap_max] = zip_heap[zip_SMALLEST]
+
+    zip_gen_bitlen(desc)
+
+    zip_gen_codes(tree, max_code)
+end
