@@ -1295,3 +1295,50 @@ function zip_ct_tally(dist,lc)
 
     return (zip_last_lit == zip_LIT_BUFSIZE-1 or zip_last_dist == zip_DIST_BUFSIZE)
 end
+
+function zip_compress_block(ltree, dtree)
+    local dist, lc
+    local lx = 0
+    local dx = 0
+    local fx = 0
+    local flag = 0
+    local code, extra
+
+    if(zip_last_lit ~= 0) then
+        repeat
+            if((lx & 7) == 0) then
+                flag = zip_flag_buf[fx]
+                fx = fx + 1
+            end
+            lc = zip_l_buf[lx] & 0xff
+            lx = lx + 1
+            if((flag & 1) == 0) then
+                zip_SEND_CODE(lc, ltree)
+            else
+                code = zip_length_code[lc]
+                zip_SEND_CODE(code+zip_LITERALS+1, ltree)
+                extra = zip_extra_lbits[code]
+                if(extra ~= 0) then
+                    lc = lc - zip_base_length[code]
+                    zip_send_bits(lc, extra)
+                end
+
+                dist = zip_d_buf[dx]
+                dx = dx + 1
+
+                code = zip_D_CODE(dist)
+
+                zip_SEND_CODE(code, dtree)
+                extra = zip_extra_dbits[code]
+                if(extra ~= 0) then
+                    dist = dist - zip_base_dist[code]
+                    zip_send_bits(dist, extra)
+                end
+            end
+
+            flag = flag >> 1
+        until not (lx < zip_last_lit)
+    end
+
+    zip_SEND_CODE(zip_END_BLOCK, ltree)
+end
