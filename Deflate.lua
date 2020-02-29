@@ -1245,3 +1245,53 @@ function zip_flush_block(eof)
         zip_bi_windup()
     end
 end
+
+local function int(x)
+    if type(x) == "number" then
+        return math.floor(x)
+    else
+        return math.floor(tonumber(x))
+    end
+end
+
+function zip_ct_tally(dist,lc)
+    zip_l_buf[zip_last_lit] = lc
+    zip_last_lit = zip_last_lit + 1
+    if(dist == 0) then
+        zip_dyn_ltree[lc].fc = zip_dyn_ltree[lc].fc + 1
+    else
+        dist = dist - 1
+        zip_dyn_ltree[zip_length_code[lc]+zip_LITERALS+1].fc = zip_dyn_ltree[zip_length_code[lc]+zip_LITERALS+1].fc + 1
+        zip_dyn_dtree[zip_D_CODE(dist)].fc = zip_dyn_dtree[zip_D_CODE(dist)].fc + 1
+        zip_d_buf[zip_last_dist] = dist
+        zip_last_dist = zip_last_dist + 1
+        zip_flags = zip_flags | zip_flag_bit
+    end
+
+    zip_flag_bit = zip_flag_bit << 1
+
+    if((zip_last_lit & 7) == 0) then
+        zip_flag_buf[zip_last_flags] = zip_flags
+        zip_last_flags = zip_last_flags + 1
+        zip_flags = 0
+        zip_flag_bit = 1
+    end
+
+    if(zip_compr_level > 2 and ((zip_last_lit & 0xFFF) == 0)) then
+        local out_length = zip_last_lit * 8
+        local in_length = zip_strstart - zip_block_start
+        local dcode
+
+        for dcode=0, zip_D_CODES-1, 1 do
+            out_length = out_length + (zip_dyn_dtree[dcode].fc * (5 + zip_extra_dbits[dcode]))
+        end
+
+        out_length = out_length >> 3
+
+        if(zip_last_dist < int(zip_last_lit/2) and out_length < int(in_length/2)) then
+            return true
+        end
+    end
+
+    return (zip_last_lit == zip_LIT_BUFSIZE-1 or zip_last_dist == zip_DIST_BUFSIZE)
+end
