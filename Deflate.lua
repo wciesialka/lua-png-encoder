@@ -676,3 +676,54 @@ function zip_deflate_internal(buff, off, buff_size)
 
     return (n+ zip_qcopy(buff, n+off, buff_size - n))
 end
+
+function zip_qcopy(buff, off, buff_size)
+    local n
+    local i
+    local j
+
+    n = 0
+    while(zip_qhead != nil and n < buff_size) do
+        i = buff_size - n
+        if(i > #zip_qhead) then
+            i = #zip_qhead
+        end
+        for j=0,i-1,1 do
+            buff[off + n + j] = zip_qhead.ptr[zip_qhead.off + j]
+        end
+
+        zip_qhead.off = zip_qhead.off + 1
+        zip_qhead.len = zip_qhead.len - 1
+
+        n = n + i
+
+        if(zip_qhead.len == 0) then
+            local p
+            p = zip_qhead
+            zip_qhead = zip_qhead.next
+            zip_reuse_queue(p)
+        end
+    end
+
+    if(n == buff_size) then
+        return n 
+    end
+
+    if(zip_outoff < zip_outcnt) then
+        i = buff_size - n 
+        if(i > zip_outcnt - zip_outoff) then
+            i = zip_outcnt - zip_outoff
+        end
+
+        for j=0,i-1,1 do
+            buff[off + n + j] = zip_outbuf[zip_outoff + j]
+        end
+        zip_outoff = zip_outoff + i
+        n = n + i 
+        if(zip_outcnt == zip_outoff) then
+            zip_outoff = 0
+            zip_outcnt = zip_outoff
+        end
+    end
+    return n
+end
