@@ -1057,3 +1057,54 @@ function zip_build_tree(desc)
 
     zip_gen_codes(tree, max_code)
 end
+
+function zip_scan_tree(tree,max_code)
+    local n
+    local prevlen = -1
+    local curlen
+    local nextlen = tree[0].dl
+    local count = 0
+    local max_count = 7
+    local min_count = 4
+
+    if(nextlen == 0) then
+        max_count = 138
+        min_count = 3
+    end
+    tree[max_code + 1].dl = 0xFFFF
+
+    for n=0,max_code,1 do
+        local continue = false
+        curlen = nextlen
+        nextlen = tree[n+1].dl
+        count = count + 1
+        if(count < max_count and curlen == nextlen) then
+            continue = true
+        elseif(count < min_count) then
+            zip_bl_tree[curlen].fc = zip_bl_tree[curlen].fc + count
+        elseif(curlen ~= 0) then
+            if(curlen ~= prevlen) then
+                zip_bl_tree[curlen].fc = zip_bl_tree[curlen].fc + 1
+            end
+            zip_bl_tree[zip_REP_3_6].fc = zip_bl_tree[zip_REP_3_6].fc + 1
+        elseif(count <= 10) then
+            zip_bl_tree[zip_REPZ_3_10].fc = zip_bl_tree[zip_REPZ_3_10].fc + 1
+        else
+            zip_bl_tree[zip_REPZ_11_138].fc = zip_bl_tree[zip_REPZ_11_138].fc + 1
+        end
+        if(not continue) then
+            count = 0
+            prevlen = curlen
+            if(nextlen == 0) then
+                max_count = 138
+                min_count = 3
+            elseif(curlen == nextlen) then
+                max_count = 6
+                min_count = 3
+            else
+                max_count = 7
+                min_count = 4
+            end
+        end
+    end
+end
