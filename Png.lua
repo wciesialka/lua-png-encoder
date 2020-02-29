@@ -1,5 +1,5 @@
-include('Color')
-include('crc')
+require('Color')
+require('crc')
 
 local png_meta = {}
 
@@ -9,19 +9,19 @@ local function Recursive_Push(target,value)
             if(type(v) == "table") then
                 Recursive_Push(target,v)
             else
-                table.insert(target,v)
+                table.insert(target,v,#target)
             end
         end
     else
-        table.insert(target,val)
+        table.insert(target,val,#target)
     end
 end
 
-function png_meta.New(self)
+function png_meta.New(self,width,height)
     local png = {}
 
-    png.width  = nil
-    png.height = nil
+    png.width  = width
+    png.height = height
     png.buffer = {137,80,78,71,13,10,26,10} -- file signature
     png.current_width = 0
     png.current_height = 0
@@ -110,7 +110,7 @@ function png_index.Add_Header(self)
 end
 
 function png_index.Add_End(self)
-    local type = {49,45,4e,44} -- IEND
+    local type = {0x49,0x45,0x4e,0x44} -- IEND
 
     self:Add_Chunk(type,{})
 end
@@ -134,3 +134,6 @@ function png_index.As_2_Bytes(self, i)
          i        & 0xFF
     }
 end
+
+Png = {}
+setmetatable(Png,png_meta)
