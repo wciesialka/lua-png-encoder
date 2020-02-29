@@ -300,7 +300,8 @@ function zip_put_short(w)
         zip_outcnt = zip_outcnt + 1
         zip_outbuf[zip_outoff + zip_outcnt] = (w & 0xFF)
         zip_outcnt = zip_outcnt + 1
-        zip_outbuf[zip_outoff + zip_outcnt++] = (w >> 8)
+        zip_outbuf[zip_outoff + zip_outcnt] = (w >> 8)
+        zip_outcnt = zip_outcnt + 1
     else
         zip_put_byte(w & 0xff)
         zip_put_byte(w >> 8)
@@ -330,12 +331,12 @@ function zip_D_CODE(dist)
 end
 
 function zip_SMALLER(tree, n, m)
-    return (tree[n].fc < tree[m].fc) || (tree[n].fc == tree[m].fc && zip_depth[n] <= zip_depth[m])
+    return (tree[n].fc < tree[m].fc) or (tree[n].fc == tree[m].fc and zip_depth[n] <= zip_depth[m])
 end
 
 function zip_read_buff(buff, offset, n)
     local i = 0
-    while(i < n && zip_deflate_pos < #zip_deflate_data) do
+    while(i < n and zip_deflate_pos < #zip_deflate_data) do
         zip_deflate_pos = zip_deflate_pos + 1
         buff[offset + i] = utf8.codepoint(zip_deflate_data,zip_deflate_pos,zip_deflate_pos) & 0xFF
         i = i+1
@@ -371,7 +372,7 @@ function zip_lm_init()
 
     zip_eofile = false
 
-    while(zip_lookahead < zip_MIN_LOOKAHEAD and (not zip_eofile)) then
+    while(zip_lookahead < zip_MIN_LOOKAHEAD and (not zip_eofile)) do
         zip_fill_window()
     end
 
@@ -693,7 +694,7 @@ function zip_qcopy(buff, off, buff_size)
     local j
 
     n = 0
-    while(zip_qhead != nil and n < buff_size) do
+    while(zip_qhead ~= nil and n < buff_size) do
         i = buff_size - n
         if(i > #zip_qhead) then
             i = #zip_qhead
@@ -908,7 +909,7 @@ function zip_gen_bitlen(desc)
         end
         tree[n].dl = bits
 
-        if(n > max_code)
+        if(n > max_code) then
             continue = true
         end
 
@@ -941,14 +942,14 @@ function zip_gen_bitlen(desc)
 
         for bits=max_length,1,-1 do
             n = zip_bl_count[bits]
-            while(n != 0) do
+            while(n ~= 0) do
                 h = h - 1
                 m = zip_head[h]
                 if(m > max_code) then
                     continue2 = true
                 end
                 if(not continue2) then
-                    if(tree[m].dl != bits) then
+                    if(tree[m].dl ~= bits) then
                         zip_opt_len = zip_opt_len + ((bits - tree[m].dl) * tree[m].fc)
                         tree[m].fc = bits;
                     end
