@@ -419,13 +419,23 @@ function zip_longest_match(cur_match)
             scanp = scanp + 2
             matchp = matchp + 1
 
-            while(zip_window[scanp + 1] == zip_window[matchp + 1] and zip_window[scanp + 2] == zip_window[matchp + 2] and zip_window[scanp + 3] == zip_window[matchp + 3] and zip_window[scanp + 4] == zip_window[matchp + 4] and zip_window[scanp + 5] == zip_window[matchp + 5] and zip_window[scanp + 6] == zip_window[matchp + 6] and zip_window[scanp + 7] == zip_window[matchp + 7] and zip_window[scanp + 8] == zip_window[matchp + 8] and scanp < strendp) do
-                scanp = scanp + 8 
-                matchp = matchp + 8 -- done to combat all the ++matchp and ++scanp that would be in the conditional
+            local function pp_scanp()
+                scanp = scanp + 1
+                return scanp
             end
 
-            scanp = scanp + 8 
-            matchp = matchp + 8
+            local function pp_matchp()
+                matchp = matchp + 1
+                return matchp
+            end
+
+            local function cond_check()
+                return zip_window[pp_scanp()] == zip_window[pp_matchp()]
+            end
+
+            do
+
+            until not (cond_check() and cond_check() and cond_check() and cond_check() and cond_check() and cond_check() and cond_check() and cond_check() and scanp < strendp)
 
             len = zip_MAX_MATCH - (strendp - scanp)
             scanp = strendp - zip_MAX_MATCH
@@ -727,3 +737,4 @@ function zip_qcopy(buff, off, buff_size)
     end
     return n
 end
+
