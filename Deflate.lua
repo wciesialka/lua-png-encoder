@@ -15,6 +15,8 @@ local function Array_Function(n,f,...)
 end
 
 -- constants
+local zip_WINDOW_BITS = 9
+local zip_WSIZE = 1 << zip_WINDOW_BITS
 local zip_STORED_BLOCK = 0
 local zip_STATIC_TREES = 1
 local zip_DYN_TREES    = 2
@@ -26,8 +28,7 @@ local zip_INBUFSIZ = 32768
 local zip_INBUF_EXTRA = 64
 local zip_OUTBUFSIZ = 1024 * 8
 local zip_WINDOW_BITS = 9
-local zip_WSIZE = 1 << zip_WINDOW_BITS
-local zip_window_size = 1 << zip_WINDOW_BITS -- as specified by PNG documentation
+local zip_window_size = zip_WSIZE
 local zip_MIN_MATCH = 3
 local zip_MAX_MATCH = 258
 local zip_BITS = 16
