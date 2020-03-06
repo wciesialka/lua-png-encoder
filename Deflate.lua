@@ -290,9 +290,10 @@ function zip_head2(i, val)
     return zip_prev[(zip_WSIZE + i)+1]
 end
 
+-- Puts one byte into the out buffer
 function zip_put_byte(c)
+    zip_outbuf[(zip_outoff + zip_outcnt+1)+1] = c
     zip_outcnt = zip_outcnt + 1
-    zip_outbuf[(zip_outoff + zip_outcnt)+1] = c
     if(zip_outoff + zip_outcnt == zip_OUTBUFSIZ) then
         zip_qoutbuf()
     end
@@ -318,16 +319,17 @@ end
 function zip_INSERT_STRING()
     local index = zip_strstart + zip_MIN_MATCH - 1
     zip_ins_h = ((zip_ins_h << zip_H_SHIFT) ~ (zip_window[(index)+1] & 0xff)) & zip_HASH_MASK
-    -- zip_hash_head = zip_head1(zip_ins_h)
     zip_hash_head = zip_head1(zip_ins_h)
     zip_hash_head = zip_prev[(zip_strstart & zip_WMASK)+1]
     zip_head2(zip_ins_h, zip_strstart)
 end
 
+-- Sends a code of the given tree
 function zip_SEND_CODE(c, tree)
     zip_send_bits(tree[(c)+1].fc, tree[(c)+1].dl)
 end
 
+-- Map from a distance to a distance code.
 function zip_D_CODE(dist)
     if(dist < 256) then
         return zip_dist_code[((dist)+1)+1] & 0xFF
@@ -336,10 +338,12 @@ function zip_D_CODE(dist)
     end
 end
 
+-- Returns if tree[n] is smaller than [m], using the depth as a tiebreaker if they are equal
 function zip_SMALLER(tree, n, m)
     return (tree[(n)+1].fc < tree[(m)+1].fc) or (tree[(n)+1].fc == tree[(m)+1].fc and zip_depth[(n)+1] <= zip_depth[(m)+1])
 end
 
+-- Read a string of bytes
 function zip_read_buff(buff, offset, n)
     local i = 0
     while(i < n and zip_deflate_pos < #zip_deflate_data) do
@@ -351,6 +355,7 @@ function zip_read_buff(buff, offset, n)
     return i
 end
 
+-- Init the longest match routine
 function zip_lm_init()
     local j
 
@@ -390,6 +395,8 @@ function zip_lm_init()
     end
 end
 
+-- Set match_start to the longest match and return its length. Matches shorter or equal to prev_length
+-- are discarded.
 function zip_longest_match(cur_match)
     local chain_length = zip_max_chain_length
     local scanp = zip_strstart
@@ -397,17 +404,19 @@ function zip_longest_match(cur_match)
     local len
     local best_len = zip_prev_length
 
+    -- ++scanp
     local function pp_scanp()
         scanp = scanp + 1
         return scanp
     end
 
+    -- ++matchp
     local function pp_matchp()
         matchp = matchp + 1
         return matchp
     end
 
-    local zip_lm_init
+    local limit
     if(zip_strstart > zip_MAX_DIST) then
         limit = zip_strstart - zip_MAX_DIST
     else
@@ -422,6 +431,18 @@ function zip_longest_match(cur_match)
 
     if(zip_prev_length >= zip_good_match) then
         chain_length = chain_length >> 2
+    end
+
+    -- --chain_length
+    local function mm_chain_length()
+        chain_length = chain_length - 1
+        return chain_length
+    end
+
+    -- (cur_match = zip_prev[cur_match & zip_WMASK]) > limit && --chain_length != 0)
+    local function dowhilecond()
+        cur_match = zip_prev[(cur_match & zip_WMASK) + 1]
+        return (cur_match > limit) and (mm_chain_length() ~= 0)
     end
 
     repeat
@@ -468,11 +489,12 @@ function zip_longest_match(cur_match)
         continue = false
         cur_match = zip_prev[(cur_match & zip_WMASK)+1]
         chain_length = chain_length - 1
-    until(not (cur_match > limit and chain_length ~= 0))
+    until(not dowhilecond())
 
     return best_len
 end
 
+--  Fill the window when the lookahead becomes insufficient
 function zip_fill_window()
     local n, m
 
@@ -523,6 +545,7 @@ function zip_fill_window()
     end
 end
 
+-- Processes a new input file and return its compressed length.
 function zip_deflate_fast()
     while(zip_lookahead ~= 0 and zip_qhead ~= nil) do
         local flush
@@ -755,6 +778,8 @@ function zip_qcopy(buff, off, buff_size)
     return n
 end
 
+-- Allocate the match buffer, initialize the various tables and save the location of the internal
+-- file attribute and method.
 function zip_ct_init()
     local n, bits, length, code, dist
     if(zip_static_dtree[(0)+1].dl ~= 0) then
@@ -886,6 +911,8 @@ function zip_init_block()
     zip_flag_bit = 1
 end
 
+-- Restore the heap property by moving down the tree starting at node k, exchanging a node with
+-- the smallest of its two children if necessary. Stop when the heap property is re-established
 function zip_pqdownheap(tree, k)
     local v = zip_heap[(k)+1]
     local j = k << 1
@@ -907,6 +934,7 @@ function zip_pqdownheap(tree, k)
     zip_heap[(k)+1] = v 
 end
 
+-- Compute the optimal bit lengths for a tree and update the total bit length.
 function zip_gen_bitlen(desc)
     local tree = desc.dyn_tree
     local extra = desc.extra_bits
@@ -988,6 +1016,7 @@ function zip_gen_bitlen(desc)
     end
 end
 
+-- Generate the codes for a given tree and bit counts
 function zip_gen_codes(tree, max_code)
     local next_code = Array(zip_MAX_BITS+1)
     local code = 0
@@ -1009,6 +1038,8 @@ function zip_gen_codes(tree, max_code)
     end
 end
 
+-- Construct one Huffman tree and assigns the code bit strings and lengths and update the
+-- total bit length for the current block
 function zip_build_tree(desc)
     local tree = desc.dyn_tree
     local stree = desc.static_tree
@@ -1090,6 +1121,7 @@ function zip_build_tree(desc)
     zip_gen_codes(tree, max_code)
 end
 
+-- Scan a literal or distance tree to determine the frequencies of the codes in the bit length tree
 function zip_scan_tree(tree,max_code)
     local n
     local prevlen = -1
@@ -1142,6 +1174,7 @@ function zip_scan_tree(tree,max_code)
     end
 end
 
+-- Send a literal or distance tree in compressed form
 function zip_send_tree(tree, max_code)
     local n
     local prevlen = -1
@@ -1205,6 +1238,8 @@ function zip_send_tree(tree, max_code)
     end
 end
 
+-- Construct the Huffman tree for the bit lengths. Returns the index in bl_order of the last bit
+-- length code to send.
 function zip_build_bl_tree()
     local max_blindex
 
@@ -1224,6 +1259,8 @@ function zip_build_bl_tree()
     return max_blindex
 end
 
+-- Send the header for a block using dynamic Huffman trees.
+-- Sends the counts, the lengths of the bit length codes, the literal tree and the distance tree.
 function zip_send_all_trees(lcodes, dcodes, blcodes)
     local rank
     zip_send_bits(lcodes-257, 5)
@@ -1238,6 +1275,7 @@ function zip_send_all_trees(lcodes, dcodes, blcodes)
     zip_send_tree(zip_dyn_dtree,dcodes-1)
 end
 
+-- Determine the best encoding for the current block.
 function zip_flush_block(eof)
     local opt_lenb, static_lenb, max_blindex, stored_len
 
@@ -1283,6 +1321,7 @@ function zip_flush_block(eof)
     end
 end
 
+-- Cast float to int as JavaScript would, flooring.
 local function int(x)
     if type(x) == "number" then
         return math.floor(x)
@@ -1291,6 +1330,8 @@ local function int(x)
     end
 end
 
+-- Save the match info and tally the frequency counts and return whether the current block must be 
+-- flushed.
 function zip_ct_tally(dist,lc)
     zip_l_buf[(zip_last_lit)+1] = lc
     zip_last_lit = zip_last_lit + 1
@@ -1334,6 +1375,7 @@ function zip_ct_tally(dist,lc)
     return (zip_last_lit == zip_LIT_BUFSIZE-1 or zip_last_dist == zip_DIST_BUFSIZE)
 end
 
+-- Send the block data compressed using the given Huffman trees
 function zip_compress_block(ltree, dtree)
     local dist, lc
     local lx = 0
@@ -1381,6 +1423,7 @@ function zip_compress_block(ltree, dtree)
     zip_SEND_CODE(zip_END_BLOCK, ltree)
 end
 
+-- Send a value on a given number of bits.
 function zip_send_bits(value, length)
     if(zip_bi_valid > zip_Buf_size - length) then
         zip_bi_buf = zip_bi_buf | (value << zip_bi_valid)
@@ -1393,8 +1436,10 @@ function zip_send_bits(value, length)
     end
 end
 
+-- Reverse the first len bits of a code.
 function zip_bi_reverse(code,len)
 
+    -- --len
     local function mmlen()
         len = len - 1
         return len
@@ -1410,6 +1455,7 @@ function zip_bi_reverse(code,len)
     return res >> 1
 end
 
+-- Write out any remaining bits in an incomplete byte.
 function zip_bi_windup()
     if(zip_bi_valid > 8) then
         zip_put_short(zip_bi_buf)
@@ -1444,6 +1490,7 @@ function zip_qoutbuf()
     end
 end
 
+-- Use the DEFLATE algorithm.
 function zip_deflate(str,level)
     local i,j
 
